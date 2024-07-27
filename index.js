@@ -1,20 +1,37 @@
 const { readCSV , readDirectory , readSource } =  require('./src/utils/fileHandler')
-// 1. Read CSV files    
+const asyncForEach = require('./src/utils/asyncForEach')
+const CatalogModels = require('./src/utils/models/CatalogModels')
 const readFiles = async() => {
     const filename = readDirectory ('./input')
-    const res= readSource(filename);
+    const result = readSource(filename);
     const data=[]
-    res.forEach(element => {
+    await asyncForEach( result ,(element) => {
         data[element]=[]
         data[element].catalog= readCSV(`./input/catalog${element}.csv`)
-        data[element].catalog= readCSV(`./input/barcode${element}.csv`)
+        data[element].suppliers= readCSV(`./input/supplier${element}.csv`)
+        data[element].barcode=readCSV(`./input/barcode${element}.csv`) 
     });
-    console.log('data',data)
-//   const json = await readCSV('./input/catalogA.csv')
-//   console.log('json',json) 
+    
+    return data
 }
-readFiles()
-// 2. Process Files and Merge Proudcts
 
+const processStep = async (data) => {
+    const catalogObj = new CatalogModels()
+    await asyncForEach (Object.keys(data), async (catalogdata)=> {
+        await catalogObj.addProduct(data[catalogdata]) 
+    })
+    return catalogObj
+}
+const runApp = async () => {
+    // 1. Read CSV files    
+    const data = await readFiles()
+    
+    // 2. Process Files and Merge Proudcts
+   // console.log('data',data)
+    const MergeData = await processStep(data)
+    //console.log('mergeData',MergeData)
+    
 
 // 3. Generate output file
+}
+runApp()
